@@ -233,6 +233,7 @@ export class ValidationExecutor {
     validationError.property = propertyName;
     validationError.children = [];
     validationError.constraints = {};
+    validationError.metadata = {};
 
     return validationError;
   }
@@ -280,8 +281,7 @@ export class ValidationExecutor {
             this.awaitingPromises.push(promise);
           } else {
             if (!validatedValue) {
-              const [type, message] = this.createValidationError(object, value, metadata, customConstraintMetadata);
-              error.constraints[type] = message;
+              this.handleCustomValidationError(error, object, value, metadata, customConstraintMetadata);
             }
           }
 
@@ -307,7 +307,13 @@ export class ValidationExecutor {
             (flatValidatedValues: boolean[]) => {
               const validationResult = flatValidatedValues.every((isValid: boolean) => isValid);
               if (!validationResult) {
-                const [type, message] = this.createValidationError(object, value, metadata, customConstraintMetadata);
+                const [type, message] = this.handleCustomValidationError(
+                  error,
+                  object,
+                  value,
+                  metadata,
+                  customConstraintMetadata
+                );
                 error.constraints[type] = message;
                 if (metadata.context) {
                   if (!error.contexts) {
@@ -326,8 +332,7 @@ export class ValidationExecutor {
 
         const validationResult = validatedSubValues.every((isValid: boolean) => isValid);
         if (!validationResult) {
-          const [type, message] = this.createValidationError(object, value, metadata, customConstraintMetadata);
-          error.constraints[type] = message;
+          this.handleCustomValidationError(error, object, value, metadata, customConstraintMetadata);
         }
       });
     });
@@ -357,10 +362,8 @@ export class ValidationExecutor {
         error.value = value;
         error.property = metadata.propertyName;
         error.target = metadata.target as object;
-        const [type, message] = this.createValidationError(metadata.target as object, value, metadata);
-        error.constraints = {
-          [type]: message,
-        };
+        error.constraints = {};
+        this.handleCustomValidationError(error, metadata.target as object, value, metadata);
         errors.push(error);
       }
     });
@@ -386,6 +389,19 @@ export class ValidationExecutor {
         }
       }
     });
+  }
+
+  private handleCustomValidationError(
+    error: ValidationError,
+    object: object,
+    value: any,
+    metadata: ValidationMetadata,
+    customValidatorMetadata?: ConstraintMetadata
+  ) {
+    const validationError = this.createValidationError(object, value, metadata, customValidatorMetadata);
+    error.constraints[validationError[0]] = validationError[1];
+    error.metadata[validationError[0]] = { constraints: metadata.constraints };
+    return validationError;
   }
 
   private createValidationError(
