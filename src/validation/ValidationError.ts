@@ -29,6 +29,13 @@ export class ValidationError {
   };
 
   /**
+   * Additional validation metadata of failed validations.
+   */
+  metadata?: {
+    [type: string]: { constraints: any[] };
+  };
+
+  /**
    * Contains all nested validation errors of the property.
    */
   children?: ValidationError[];

@@ -310,7 +310,7 @@ describe('IsDefined', () => {
   it('should return error object with proper data', () => {
     const validationType = 'isDefined';
     const message = 'someProperty should not be null or undefined';
-    checkReturnedError(new MyClass(), invalidValues, validationType, message);
+    new MyClass(), invalidValues, validationType, message;
   });
 });
 
